@@ -34,6 +34,8 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Fix the cause, which is usually shared state, real time, real network, ordering or randomness. Inject the clock, the random seed and the network.
 - Quarantine a flake you can't fix yet, with a named reason in NET.md. Never leave it retrying silently: an agent will learn that red means nothing.
 - Pin tool and dependency versions so the same commit gives the same result.
+- Cut tests loose from the host. A test that reads `/etc`, a production env file or a real service, or demands one exact runtime version, fails on every other machine, and agents learn to ignore it. Inject paths and versions through parameters or environment, with fixtures.
+- Wait on the page or process being ready, never on the network going idle. Dev servers and analytics keep connections open.
 
 ## Precise
 
@@ -42,6 +44,7 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Make end-to-end and integration failures carry their evidence: a trace, a screenshot, the request and response, the relevant log lines.
 - Keep property and fuzz counterexamples shrunk and saved.
 - Print the seed for anything random.
+- Make every sweep name each offender by something grep can find: the href, id, test id or nearest labelled container. A list of sizes without locators costs a search per finding.
 - Make error messages in the product itself say what was wrong, where, and what was expected. Agents read them too.
 
 ## Agent-specific
