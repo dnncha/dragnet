@@ -1,0 +1,10 @@
+{
+  "name": "dragnet",
+  "version": "0.1.0",
+  "description": "Design a project's feedback net so coding agents catch their own mistakes fast: pick testing techniques, shift escaped bugs left, tighten the loop.",
+  "author": {"name": "Notchbird", "url": "https://notchbird.com"},
+  "homepage": "https://notchbird.com/testing/",
+  "repository": "https://github.com/dnncha/dragnet",
+  "license": "MIT",
+  "keywords": ["testing", "feedback", "agents", "skill", "fuzzing", "property-based-testing", "mutation-testing"]
+}

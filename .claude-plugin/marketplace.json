@@ -1,0 +1,11 @@
+{
+  "name": "dragnet",
+  "owner": {"name": "Notchbird", "url": "https://notchbird.com"},
+  "plugins": [
+    {
+      "name": "dragnet",
+      "source": "./",
+      "description": "Design a project's feedback net so coding agents catch their own mistakes fast."
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+# dragnet
+
+An agent skill that builds a project's feedback net, so coding agents catch their own mistakes fast.
+
+An agent improves only as fast as its signals tell it it's wrong. Strict types, lint rules, assertions, tests, fuzzers, sanitizers and production alerts are all feedback. dragnet picks the right ones for a project, puts each at the earliest tier that can see the bug, and makes every failure precise enough to fix in one step.
+
+**North star: the fastest honest feedback on every change.**
+
+## What it does
+
+1. **Recon.** `scripts/recon.sh` lists a repo's languages, tests, type and lint strictness, gate commands, escaped bugs, fix hotspots, and fixes that shipped without a test.
+2. **Risk surfaces.** Names where the project can hurt users, weighted by where bugs keep landing.
+3. **Net map.** Marks each risk as covered, late or a hole. Coverage here means risk × signal, with mutation testing to check that tests actually assert something.
+4. **Escape analysis.** Every bug that got through is traced to the earliest signal that could have caught it, which is then added and proven red on the old code. Recurring bug classes get a class-level fix such as a stricter type, a property test, a fuzz target or a lint rule.
+5. **Tight loop.** One inner-loop command and one gate command, with flakes fixed or quarantined and slow suites moved to nightly runs.
+6. **NET.md.** A short file at the repo root that tells every future agent session how the net works.
+7. **Close holes now.** Each new signal is proven by injecting the bug it targets and watching it fail.
+
+It ships with a catalog of 49 techniques: tier, speed, setup cost, strengths, gaps, signal quality, what covers each gap, and tools for JS/TS, Python, Swift, Rust, Go and the JVM. It also has a catch map from 17 bug classes to the signals that catch them, earliest first.
+
+## Install
+
+Any agent that reads skills (Claude Code, Codex, Cursor and others):
+
+```sh
+npx skills add dnncha/dragnet
+```
+
+Claude Code plugin:
+
+```text
+/plugin marketplace add dnncha/dragnet
+/plugin install dragnet@dragnet
+```
+
+By hand:
+
+```sh
+git clone https://github.com/dnncha/dragnet ~/dragnet
+ln -s ~/dragnet/skills/dragnet ~/.claude/skills/dragnet
+```
+
+## Use
+
+```text
+/dragnet
+/dragnet a user hit a crash when importing an empty CSV
+/dragnet our test suite takes 12 minutes, make the loop tight
+/dragnet what do our tests actually cover?
+```
+
+The full field guide is at [notchbird.com/testing](https://notchbird.com/testing/).
+
+## Layout
+
+```text
+skills/dragnet/SKILL.md                 the procedure
+skills/dragnet/scripts/recon.sh         repo scan
+skills/dragnet/references/catalog.md    49 techniques (generated)
+skills/dragnet/references/catch-map.md  bug class → signals (generated)
+skills/dragnet/references/escapes.md    escape analysis
+skills/dragnet/references/loop.md       faster, honest, precise signals
+skills/dragnet/references/net-template.md
+data/catalog.json                       source data
+tools/build.py                          regenerates the generated references
+```
+
+Edit `data/catalog.json`, then run `python3 tools/build.py`.
+
+Made by [Notchbird](https://notchbird.com), a Mac notch app for Claude Code and Codex. MIT licensed.
