@@ -43,8 +43,10 @@ Check out the pre-fix code, or revert the fix in a scratch commit, and run the n
 
 ## Find the class
 
-After the specific escape is covered, ask what else breaks the same way:
+After the specific escape is covered, ask what else breaks the same way. Partial fixes are the most common escape of all: the fix changed one screen, one endpoint or one call site, and its siblings still carry the bug.
 
+- Search for the old pattern the fix replaced (the old function, the old format, the old query) and fix every sibling in the same change.
+- Check whether existing tests assert the buggy behaviour. A test that expects the wrong output locks the bug in. Update it, and note that the spec was unclear.
 - Search the codebase for the same pattern (grep, Semgrep, the type's other uses).
 - If three or more escapes share a bug class or a hotspot file, the net has a structural hole there. Add the class-level signal: a stricter type, a property suite, a fuzz target, a contract test, or a redesign that removes the hazard.
 

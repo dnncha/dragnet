@@ -14,6 +14,8 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Run the type checker and linter in the editor or language server so they fire while the agent writes.
 - Validate config, environment and feature flags at startup, so a bad deploy fails in the smoke test, not on the first request.
 - Turn a recurring review comment into a lint rule.
+- Turn every rule in a design or style doc (tap target sizes, units, wording, colours) into a sweep that checks all pages or call sites at once, instead of one hand-written assertion per component.
+- Delete the dangerous alternative. When a helper produces the wrong format or unit for the product, remove it so the compiler rejects every future use.
 
 ## Faster
 

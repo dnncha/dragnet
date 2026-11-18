@@ -31,13 +31,13 @@ Do every step for a new or unfamiliar project. Otherwise start at the step for y
 
 ### 1. Recon the net
 
-Run `scripts/recon.sh <repo> [days]`. It lists languages, the test files and signals it detects, gate commands, escape-like commits, fix hotspots and fixes that shipped without a test. Then run each loop command yourself and record its wall time, pass/fail and whether it reruns clean.
+Run `scripts/recon.sh <repo> [days]`. It lists languages, the test files and signals it detects, gate commands, escape-like commits, fix hotspots and fixes that shipped without a test. Read the project's own agent and verification docs that recon lists (AGENTS.md, CLAUDE.md, a testing roadmap, DESIGN.md) before proposing anything: build on the net the team already chose, and respect its release rules and compute routing. Then run each loop command yourself and record its wall time, pass/fail and whether it reruns clean. Run heavy suites where the environment says heavy work goes.
 
 Done when every existing signal is listed with its command, tier, measured time and honest/flaky status.
 
 ### 2. Name the risk surfaces
 
-List where this project can hurt users. Look for parsers and file formats, money and auth, persistence and migrations, concurrency and async, external APIs, UI flows, performance-sensitive paths, platform spread, and AI-generated output. Weight each by recon's fix hotspots: code that keeps getting fixed is where the next bug is.
+List where this project can hurt users. Look for parsers and file formats, money and auth, persistence and migrations, concurrency and async, external APIs, UI flows, performance-sensitive paths, platform spread, and AI-generated output. Weight each by recon's fix hotspots: code that keeps getting fixed is where the next bug is. Written rules count as risk surfaces too: every rule in a design, style or product doc that no check enforces is a hole waiting for an escape.
 
 Done when each surface has file paths and a likelihood × impact rating.
 

@@ -42,15 +42,16 @@ has '(^|/)evals?/|promptfooconfig' && line "LLM eval suite present"
 has '(^|/)bench(es|marks?)?/|_bench\.|\.bench\.' && line "benchmarks present"
 
 section "Signals detected"
-if [ -f package.json ]; then
+pkgs=$(printf '%s\n' "$all" | grep -E '(^|/)package\.json$' | grep -v node_modules | awk -F/ 'NF<=3')
+for pkg in $pkgs; do
   for dep in typescript vitest jest mocha @playwright/test cypress fast-check @stryker-mutator/core eslint @biomejs/biome oxlint zod valibot @axe-core/playwright storybook c8 @vitest/coverage-v8 k6 @pact-foundation/pact jazzer.js; do
-    grep -q "\"$dep\"" package.json && line "npm: $dep"
+    grep -q "\"$dep\"" "$pkg" && line "$pkg: $dep"
   done
-fi
-for f in tsconfig.json tsconfig.base.json; do
+done
+for f in $(printf '%s\n' "$all" | grep -E '(^|/)tsconfig(\.base)?\.json$' | grep -v node_modules | awk -F/ 'NF<=3'); do
   [ -f "$f" ] && { grep -Eq '"strict"[[:space:]]*:[[:space:]]*true' "$f" && line "$f: strict on" || line "$f: strict NOT on"; }
 done
-for f in pyproject.toml setup.cfg requirements.txt requirements-dev.txt; do
+for f in $(printf '%s\n' "$all" | grep -E '(^|/)(pyproject\.toml|setup\.cfg|requirements(-dev)?\.txt)$' | awk -F/ 'NF<=3'); do
   [ -f "$f" ] || continue
   for dep in pytest hypothesis mypy pyright ruff mutmut atheris coverage pydantic schemathesis pytest-randomly syrupy crosshair; do
     grep -qi "$dep" "$f" && line "$f: $dep"
@@ -83,40 +84,42 @@ done
 [ "$(grep_files '\.swift$' '[a-zA-Z)\]]!\.|try!|as!')" -gt 0 ] && line "Swift force unwraps or try! in $(grep_files '\.swift$' '[a-zA-Z)\]]!\.|try!|as!') files"
 
 section "Gate and loop commands"
-if [ -f package.json ]; then
-  python3 - <<'PY' 2>/dev/null
-import json
-s = json.load(open("package.json")).get("scripts", {})
+for pkg in $pkgs; do
+  PKG="$pkg" python3 - <<'PY' 2>/dev/null
+import json, os
+p = os.environ["PKG"]
+s = json.load(open(p)).get("scripts", {})
+where = "" if p == "package.json" else f" ({os.path.dirname(p)})"
 for k, v in s.items():
-    if any(w in k for w in ("test", "check", "lint", "type", "gate", "verify", "e2e", "ci", "build")):
-        print(f"- npm run {k}: {v}")
+    if any(w in k for w in ("test", "check", "lint", "type", "gate", "verify", "e2e", "ci")):
+        print(f"- npm run {k}{where}: {v[:140]}")
 PY
-fi
+done
 for f in Makefile justfile Justfile Taskfile.yml; do
   [ -f "$f" ] && grep -E '^[a-zA-Z0-9_-]+:' "$f" | cut -d: -f1 | grep -Ei 'test|check|lint|gate|verify|ci|fuzz|bench' | sed "s|^|- $f target: |"
 done
-printf '%s\n' "$all" | grep -Ei '(^|/)scripts?/[^/]*gate[^/]*$' | head -5 | sed 's|^|- gate script: |'
+printf '%s\n' "$all" | grep -Ei '(^|/)(scripts?|tools)/[^/]*(gate|preflight|ship)[^/]*$' | head -8 | sed 's|^|- gate script: |'
 printf '%s\n' "$all" | grep -Ei '^scripts?/[^/]*(check|test|verify|ci)[^/]*$' | grep -vi gate | head -10 | sed 's|^|- script: |'
 printf '%s\n' "$all" | grep -E '^\.github/workflows/|^\.gitlab-ci|^\.circleci/|^ci_scripts/|^\.buildkite/' | head -10 | sed 's|^|- hosted CI file: |'
 [ -f .pre-commit-config.yaml ] && line "pre-commit hooks configured"
 printf '%s\n' "$all" | grep -Eq '^\.husky/|^lefthook\.yml' && line "git hooks configured"
-for f in AGENTS.md CLAUDE.md .cursorrules NET.md TESTING.md; do
+for f in AGENTS.md CLAUDE.md .cursorrules NET.md TESTING.md docs/verification-roadmap.md; do
   [ -f "$f" ] && line "agent or testing doc: $f"
 done
 
 if [ "$in_git" = 1 ]; then
   section "Escapes in the last $days days (fix, revert, hotfix commits)"
   since="$days days ago"
-  total=$(git log --since="$since" --oneline 2>/dev/null | wc -l | tr -d ' ')
-  fixes=$(git log --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --oneline 2>/dev/null | wc -l | tr -d ' ')
+  total=$(git log --no-merges --since="$since" --oneline 2>/dev/null | wc -l | tr -d ' ')
+  fixes=$(git log --no-merges --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --oneline 2>/dev/null | wc -l | tr -d ' ')
   line "$fixes fix-like commits of $total"
-  git log --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --format='  %h %s' 2>/dev/null | head -25
+  git log --no-merges --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --format='  %h %s' 2>/dev/null | head -25
   section "Hotspots: files most touched by fix-like commits"
-  git log --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --name-only --format= 2>/dev/null \
+  git log --no-merges --since="$since" -i -E --grep='^(fix|hotfix|revert|bug)|\bfix(es|ed)?\b|regression|broke|crash' --name-only --format= 2>/dev/null \
     | grep -Ev '(^|/)(tests?|__tests__|Tests|spec)/|[._-](test|spec)\.|_test\.|\.lock$|\.md$|^$' \
     | sort | uniq -c | sort -rn | head -15 | sed 's|^ *||;s|^|- |'
   section "Fixes that shipped without a test change"
-  git log --since="$since" -i -E --grep='^(fix|hotfix|bug)|\bfix(es|ed)?\b|regression|crash' --format='%h' 2>/dev/null | head -60 | while read -r sha; do
+  git log --no-merges --since="$since" -i -E --grep='^(fix|hotfix|bug)|\bfix(es|ed)?\b|regression|crash' --format='%h' 2>/dev/null | head -60 | while read -r sha; do
     changed=$(git show --name-only --format= "$sha" 2>/dev/null)
     printf '%s\n' "$changed" | grep -Eq '(^|/)(tests?|__tests__|Tests|spec|e2e)/|[._-](test|spec)\.|_test\.|Tests?\.swift$' || git log -1 --format='- %h %s' "$sha"
   done | head -20
