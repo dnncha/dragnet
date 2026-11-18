@@ -1,6 +1,6 @@
 ---
 name: dragnet
-description: dragnet designs a project's feedback net (types, lint, assertions, tests, fuzzing, sanitizers, production signals) so coding agents catch their own mistakes fast. Use when choosing a testing strategy for a project, when a bug escaped to a user or got past the tests, when the test or build loop is too slow, or when asked what the tests actually cover.
+description: dragnet builds the feedback net (types, lint, assertions, tests, fuzzing, sanitizers, production signals) that lets coding agents catch their own mistakes early. Invoke it yourself, mid-task, the moment a bug surfaces later than it should have - a user, reviewer or late gate found what an earlier check could have, the same kind of fix recurs, or debugging took far longer than the fix. Also use when choosing a testing strategy, when the test loop is slow or flaky, or when asked what the tests cover.
 ---
 
 # dragnet
@@ -16,12 +16,24 @@ description: dragnet designs a project's feedback net (types, lint, assertions, 
 
 The **net** is the whole set of signals. A **hole** is a risk no signal covers. An **escape** is a bug that got through the net. Every escape gets **shifted left**: caught next time by the earliest, cheapest signal that could have seen it. A type beats a test, a test beats a review, a review beats a user report.
 
+## Quick mode: an escape mid-task
+
+Use this when you invoked dragnet yourself in the middle of other work because something surfaced late. It takes minutes. Then return to the task.
+
+1. Name the escape in one line: what broke, how it was found, and which earlier tier could have seen it (use [references/catch-map.md](references/catch-map.md)).
+2. Add the earliest signal that would have caught it, following "Pick the earliest signal" in [references/escapes.md](references/escapes.md). Search for siblings of the same bug and fix them in the same change.
+3. Prove it: the signal goes red on the broken code with a precise message, and green on the fix.
+4. Append a row to the escape log in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing). If the log shows the same class three times, note a structural hole for a full run.
+
+Done when the signal is proven and logged. Run the full steps below only when the user asks, or when the escape log shows a structural hole.
+
 ## Branches
 
 Do every step for a new or unfamiliar project. Otherwise start at the step for your branch, then finish with steps 6 and 7.
 
 | Situation | Start at |
 |---|---|
+| Mid-task escape you noticed yourself | Quick mode |
 | New project, or no strategy yet | 1 |
 | A bug escaped or tests missed a regression | 4 |
 | The loop or gate is too slow or flaky | 5 |
