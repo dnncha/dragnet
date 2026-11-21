@@ -11,10 +11,10 @@ An agent improves only as fast as its signals tell it it's wrong. Strict types, 
 1. **Recon.** `scripts/recon.sh` lists a repo's languages, tests, type and lint strictness, gate commands, escaped bugs, fix hotspots, and fixes that shipped without a test.
 2. **Risk surfaces.** Names where the project can hurt users, weighted by where bugs keep landing.
 3. **Net map.** Marks each risk as covered, late or a hole. Coverage here means risk × signal, with mutation testing to check that tests actually assert something.
-4. **Escape analysis.** Every bug that got through is traced to the earliest signal that could have caught it, which is then added and proven red on the old code. Recurring bug classes get a class-level fix such as a stricter type, a property test, a fuzz target or a lint rule.
+4. **Escape analysis.** Every bug that got through, and every defect a new signal catches, is fixed along with its siblings. Then its whole class gets a guard from the top of a prevention ladder: make it impossible with a type, delete the dangerous API, ban it with a lint rule, or sweep the surface, before falling back to assertions, properties and regression tests. Each guard runs at the fastest tier it can, so the next instance fails within seconds of the edit, and is proven red on the old code and on a planted sibling.
 5. **Tight loop.** One inner-loop command and one gate command, with flakes fixed or quarantined and slow suites moved to nightly runs.
 6. **NET.md.** A short file at the repo root that tells every future agent session how the net works.
-7. **Close holes now.** Each new signal is proven by injecting the bug it targets and watching it fail.
+7. **Close holes now.** Each new signal is proven by injecting the bug it targets and watching it fail. Whatever it catches in today's code gets fixed in the same session, not baselined.
 
 It ships with a catalog of 49 techniques: tier, speed, setup cost, strengths, gaps, signal quality, what covers each gap, and tools for JS/TS, Python, Swift, Rust, Go and the JVM. It also has a catch map from 17 bug classes to the signals that catch them, earliest first.
 

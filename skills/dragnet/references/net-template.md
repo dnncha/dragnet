@@ -33,6 +33,8 @@ Nightly: `<command or schedule>`
 
 ## Escape log
 
-| Date | Symptom | Root cause | Class | Caught by | Earliest signal | Added | Proved | Class fix |
-|---|---|---|---|---|---|---|---|---|
+| Date | Symptom | Root cause | Class | Caught by | Fixed (+siblings) | Class guard | Rung | Time to red | Proved |
+|---|---|---|---|---|---|---|---|---|---|
+
+Rung is the prevention ladder in dragnet's escapes.md: 1 impossible, 2 deleted path, 3 rule, 4 sweep, 5 assertion, 6 property or fuzz, 7 regression test, 8 production. Proved means red on the pre-fix code and on a planted sibling.
 ```

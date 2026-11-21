@@ -66,7 +66,7 @@ def catch_map():
     out = [
         "# Catch map",
         "",
-        "Generated from `data/catalog.json`. For each bug class, the signals that catch it, earliest and cheapest first. When a bug escapes, start at the top of its row and pick the first signal the project can afford. That is the shift-left target.",
+        "Generated from `data/catalog.json`. For each bug class, the signals that catch it, earliest and cheapest first. When a bug escapes, fix it first, then climb the prevention ladder in escapes.md. Use this row to pick the fastest signal for the rungs that need one: start at the top and take the first the project can afford.",
         "",
     ]
     for cls, desc in DATA["bug_classes"].items():

@@ -53,4 +53,4 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Agents trust green. A suite with weak assertions trains overconfidence. Mutation-test the core to find tests that pass without checking anything.
 - Agents loop on noise. Warnings that never fail the build, and logs full of expected errors, waste their attention. Make the gate quiet when green.
 - Agents can write tests faster than humans can. Spend that on properties, fuzz harnesses and stateful models, the techniques humans skip because they take thought.
-- When an agent fixes a bug, the commit should contain the signal that would have caught it. Require it in AGENTS.md.
+- When an agent fixes a bug, the commit should contain the fix for every sibling and the guard that kills the class, at the fastest tier it can run. Require it in AGENTS.md.

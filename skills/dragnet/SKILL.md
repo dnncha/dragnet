@@ -1,6 +1,6 @@
 ---
 name: dragnet
-description: dragnet builds the feedback net (types, lint, assertions, tests, fuzzing, sanitizers, production signals) that lets coding agents catch their own mistakes early. Invoke it yourself, mid-task, the moment a bug surfaces later than it should have - a user, reviewer or late gate found what an earlier check could have, the same kind of fix recurs, or debugging took far longer than the fix. Also use when choosing a testing strategy, when the test loop is slow or flaky, or when asked what the tests cover.
+description: dragnet builds the feedback net (types, lint, assertions, tests, fuzzing, sanitizers, production signals) that lets coding agents catch their own mistakes early. It fixes every defect the net catches, then turns each one into a class-level guard that makes the same kind of bug impossible or catches it within seconds of the edit. Invoke it yourself, mid-task, the moment a bug surfaces later than it should have - a user, reviewer or late gate found what an earlier check could have, the same kind of fix recurs, or debugging took far longer than the fix. Also use when choosing a testing strategy, when the test loop is slow or flaky, or when asked what the tests cover.
 ---
 
 # dragnet
@@ -14,18 +14,29 @@ description: dragnet builds the feedback net (types, lint, assertions, tests, fu
 - **Honest:** deterministic. A flaky signal is a lying signal, and agents believe it.
 - **Precise:** the failure names the file, line, input and expected-vs-actual, so the fix is one step away.
 
-The **net** is the whole set of signals. A **hole** is a risk no signal covers. An **escape** is a bug that got through the net. Every escape gets **shifted left**: caught next time by the earliest, cheapest signal that could have seen it. A type beats a test, a test beats a review, a review beats a user report.
+The **net** is the whole set of signals. A **hole** is a risk no signal covers. An **escape** is a bug that got through the net. A **catch** is a defect a signal found, whether an old signal or one dragnet just added.
+
+Every catch and every escape goes through the same four moves, in order:
+
+1. **Fix it.** The defect, and every sibling with the same cause, is fixed in this session. A net that finds bugs and leaves them in place has only written a report.
+2. **Kill the class.** Ask what else breaks the same way, and climb the prevention ladder in [references/escapes.md](references/escapes.md) as high as it goes. The goal is a codebase where the class cannot be written: a type, a deleted API or a lint rule beats any test.
+3. **Catch it in seconds.** Whatever guard you add runs at the earliest tier that can see it, ideally the compiler or the inner loop, and fails with a message that points at the line. Measure time-to-red and push it down.
+4. **Prove and log it.** The guard goes red on the broken code and on a planted sibling, green on the fix, and the row lands in `NET.md`.
+
+A type beats a test, a test beats a review, a review beats a user report.
 
 ## Quick mode: an escape mid-task
 
 Use this when you invoked dragnet yourself in the middle of other work because something surfaced late. It takes minutes. Then return to the task.
 
-1. Name the escape in one line: what broke, how it was found, and which earlier tier could have seen it (use [references/catch-map.md](references/catch-map.md)).
-2. Add the earliest signal that would have caught it, following "Pick the earliest signal" in [references/escapes.md](references/escapes.md). Search for siblings of the same bug and fix them in the same change.
-3. Prove it: the signal goes red on the broken code with a precise message, and green on the fix.
-4. Append a row to the escape log in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing). If the log shows the same class three times, note a structural hole for a full run.
+1. **Name it** in one line: what broke, how it was found, and which earlier tier could have seen it (use [references/catch-map.md](references/catch-map.md)).
+2. **Fix it and its siblings.** Search for the same cause (the old pattern, the same call, the same assumption) across the codebase and fix every instance in this change. Fix tests that assert the buggy behaviour.
+3. **Kill the class.** Climb the prevention ladder in [references/escapes.md](references/escapes.md) from the top: make it unrepresentable, delete the dangerous API, or ban it with a rule. Drop to an assertion or a test only when every rung above is impossible here, and write down why in the log row.
+4. **Make it fast.** The guard must fire in the editor, the compiler or the inner-loop command, in seconds. If it can only run at the gate, also add a fast slice to the inner loop.
+5. **Prove it.** Restore the bug, or plant a fresh instance of the class in a new spot: the guard goes red with a message that names the file and line, then green on the fix.
+6. **Log it** in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing), including the rung reached and the time-to-red. If the log shows the same class three times, the class is still open: schedule a full run on it.
 
-Done when the signal is proven and logged. Run the full steps below only when the user asks, or when the escape log shows a structural hole.
+Done when the defect and its siblings are fixed, the class guard is proven on both the original bug and a planted sibling, and the row is logged.
 
 ## Branches
 
@@ -61,9 +72,11 @@ Done when every surface is marked covered, late or hole.
 
 ### 4. Shift escapes left
 
-Read [references/escapes.md](references/escapes.md) and run its escape analysis on each recent escape: recon's fix commits, failing CI or gate runs, bug reports, crash logs, or the failure the user just described. For each one, find the earliest signal that could have caught it, add that signal so it goes red on the old code and green on the fix, then ask whether the escape is one of a class. If it is, add the signal that catches the whole class: a type, a lint rule, a property, a fuzz target or a contract.
+Read [references/escapes.md](references/escapes.md) and run its escape analysis on each recent escape: recon's fix commits, failing CI or gate runs, bug reports, crash logs, or the failure the user just described. For each one: fix it and its siblings if it is still live, climb the prevention ladder for its whole class, wire the guard into the fastest tier that can run it, and prove it red on the old code and on a planted sibling.
 
-Done when every escape has a signal that demonstrably fails on the pre-fix code.
+Group escapes by class before you start. One type change or lint rule that kills a class beats five regression tests for its five past instances.
+
+Done when every live defect is fixed, every escape's class has a guard at the highest rung the project allows, and each guard demonstrably fails on the pre-fix code.
 
 ### 5. Tighten the loop
 
@@ -77,9 +90,13 @@ Write or update `NET.md` at the repo root from [references/net-template.md](refe
 
 ### 7. Close the top holes now
 
-Implement the top one to three holes in this session. Prove each new signal works: inject the bug it targets by hand (flip a comparison, drop a check, delete a line), watch it go red with a precise message, then restore the code. A signal that has never been seen to fail is unproven. Run the gate, then commit with the escape or hole it closes in the message.
+Implement the top one to three holes in this session. Prove each new signal works: inject the bug it targets by hand (flip a comparison, drop a check, delete a line), watch it go red with a precise message, then restore the code. A signal that has never been seen to fail is unproven.
 
-Done when each new signal has been seen to fail on an injected fault and pass on the real code, the gate is green, and NET.md lists what remains.
+**Fix what the new signals catch.** A new type, rule, sweep or property often goes red on today's code. Each of those failures is a real defect the old net missed. Fix every one in this session, rather than suppressing it, baselining it or loosening the signal. If a finding is a false positive, tighten the signal until it is precise, never widen an allowlist to get green. Only a fix too large for the session may be deferred, and then it is listed in NET.md's holes with its locator, never hidden behind a skip. Run each caught defect through the four moves: its class may be wider than the hole you were closing.
+
+Run the gate, then commit with the escape or hole it closes and the defects it caught in the message.
+
+Done when each new signal has been seen to fail on an injected fault and pass on the real code, every defect it caught is fixed or listed, the gate is green, and NET.md lists what remains.
 
 ## Reference
 
