@@ -143,7 +143,9 @@ export async function runCampaign({
     if (!violations.length && !keepPassingTraces) await rm(join(directory, name), { force: true });
   }
   const coverage = await coverageReport(join(directory, "blocks.jsonl"), allStates);
-  const driverError = !traces.length && driverFailure.test(fuzz.stdout + fuzz.stderr);
+  const fuzzOutput = fuzz.stdout + fuzz.stderr;
+  const driverError = ![0, 2].includes(fuzz.code) || (!traces.length && driverFailure.test(fuzzOutput));
+  const errorTail = driverError ? fuzzOutput.split("\n").filter((line) => line.trim() && !line.includes(" WARN ")).slice(-3).join(" / ").slice(0, 600) : "";
   const findings = [];
   for (const [property, found] of firstRunFor) {
     const shrunk = join(directory, `shrunk-${property}.bin`);
@@ -177,6 +179,7 @@ export async function runCampaign({
     statesExplored,
     fuzzExit: fuzz.code,
     driverError,
+    errorTail,
     coverage: coverage && { blocks: coverage.blocks, hit: coverage.hit },
     findings
   };
@@ -184,7 +187,7 @@ export async function runCampaign({
   const report = [
     `# Bombadil campaign: ${origin}`,
     "",
-    `${summary.runs} runs, ${summary.statesExplored} states, ${summary.seconds} s, fuzz exit ${summary.fuzzExit}${driverError ? " (driver error, no verdict)" : ""}.`,
+    `${summary.runs} runs, ${summary.statesExplored} states, ${summary.seconds} s, fuzz exit ${summary.fuzzExit}${driverError ? ` (no verdict: ${errorTail})` : ""}.`,
     coverage ? `Coverage: ${coverage.hit} of ${coverage.blocks} instrumented blocks reached.` : "Coverage: no symbols written.",
     "",
     ...findings.flatMap((finding) => [
@@ -213,7 +216,7 @@ export async function runCampaign({
   ].join("\n");
   await writeFile(join(directory, "report.md"), report + "\n");
   log(
-    `${findings.length ? "FAIL " : driverError ? "ERROR" : "ok   "} ${origin}: ${summary.runs} runs, ${summary.statesExplored} states, ${coverage ? `${coverage.hit}/${coverage.blocks} blocks, ` : ""}${findings.length} properties violated${findings.length ? ` (${findings.map((finding) => `${finding.property} in ${finding.steps.length} steps`).join(", ")})` : ""}; report ${join(directory, "report.md")}`
+    `${findings.length ? "FAIL " : driverError ? "ERROR" : "ok   "} ${origin}: ${summary.runs} runs, ${summary.statesExplored} states, ${coverage ? `${coverage.hit}/${coverage.blocks} blocks, ` : ""}${findings.length} properties violated${findings.length ? ` (${findings.map((finding) => `${finding.property} in ${finding.steps.length} steps`).join(", ")})` : ""}${driverError ? `; fuzz exit ${fuzz.code}, no verdict: ${errorTail}` : ""}; report ${join(directory, "report.md")}`
   );
   return summary;
 }
