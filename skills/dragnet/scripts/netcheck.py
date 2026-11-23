@@ -8,9 +8,12 @@ import sys
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING
 
-RUNG_NAMES: Dict[int, str] = {
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+RUNG_NAMES: dict[int, str] = {
     1: "impossible",
     2: "deleted path",
     3: "rule",
@@ -35,7 +38,7 @@ REASON = re.compile(r"above:\s*\S.{10,}", re.IGNORECASE)
 CLIMBABLE = re.compile(r"climbable:", re.IGNORECASE)
 RUNG_NUMBER = re.compile(r"\s*([1-8])\b")
 
-Row = Tuple[int, List[str]]
+Row = tuple[int, list[str]]
 
 
 @dataclass(frozen=True)
@@ -60,21 +63,33 @@ class Escape:
     cell: str
 
 
+def no_signals() -> list[Signal]:
+    return []
+
+
+def no_escapes() -> list[Escape]:
+    return []
+
+
+def no_problems() -> list[Problem]:
+    return []
+
+
 @dataclass
 class Net:
-    signals: List[Signal] = field(default_factory=lambda: [])
-    escapes: List[Escape] = field(default_factory=lambda: [])
-    problems: List[Problem] = field(default_factory=lambda: [])
+    signals: list[Signal] = field(default_factory=no_signals)
+    escapes: list[Escape] = field(default_factory=no_escapes)
+    problems: list[Problem] = field(default_factory=no_problems)
 
 
-def cells(line: str) -> List[str]:
+def cells(line: str) -> list[str]:
     body = line.strip().removeprefix("|").removesuffix("|")
     return [c.strip() for c in re.split(r"(?<!\\)\|", body)]
 
 
-def tables(text: str) -> Iterator[Tuple[str, List[Row]]]:
+def tables(text: str) -> Iterator[tuple[str, list[Row]]]:
     heading = ""
-    rows: List[Row] = []
+    rows: list[Row] = []
     for number, line in enumerate(text.splitlines(), 1):
         if line.startswith("#"):
             if rows:
@@ -91,22 +106,22 @@ def tables(text: str) -> Iterator[Tuple[str, List[Row]]]:
         yield heading, rows
 
 
-def is_separator(row: List[str]) -> bool:
+def is_separator(row: list[str]) -> bool:
     return all(set(c) <= set("-: ") for c in row)
 
 
-def column(header: List[str], *names: str) -> Optional[int]:
+def column(header: list[str], *names: str) -> int | None:
     for index, name in enumerate(header):
         if any(name == n or name.startswith(n) for n in names):
             return index
     return None
 
 
-def cell(row: List[str], index: Optional[int]) -> str:
+def cell(row: list[str], index: int | None) -> str:
     return row[index] if index is not None and index < len(row) else ""
 
 
-def check_signal(tier: str, runs: str, label: str) -> Optional[str]:
+def check_signal(tier: str, runs: str, label: str) -> str | None:
     if tier.lower().startswith("human"):
         return None
     if not runs:
@@ -120,7 +135,7 @@ def check_signal(tier: str, runs: str, label: str) -> Optional[str]:
     return None
 
 
-def read_signals(net: Net, heading: str, rows: List[Row]) -> None:
+def read_signals(net: Net, heading: str, rows: list[Row]) -> None:
     header = [h.lower() for h in rows[0][1]]
     tier_i = column(header, "tier")
     runs_i = column(header, "runs")
@@ -138,7 +153,7 @@ def read_signals(net: Net, heading: str, rows: List[Row]) -> None:
             net.problems.append(Problem(number, message))
 
 
-def read_escapes(net: Net, heading: str, rows: List[Row]) -> None:
+def read_escapes(net: Net, heading: str, rows: list[Row]) -> None:
     header = [h.lower() for h in rows[0][1]]
     rung_i = column(header, "rung")
     class_i = column(header, "class", "bug class")
@@ -182,12 +197,16 @@ def class_key(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]", "", text.lower()).strip()
 
 
-def open_classes(escapes: Sequence[Escape]) -> List[List[Escape]]:
-    groups: Dict[str, List[Escape]] = {}
+def open_classes(escapes: Sequence[Escape]) -> list[list[Escape]]:
+    groups: dict[str, list[Escape]] = {}
     for escape in escapes:
         if escape.bug_class:
             groups.setdefault(class_key(escape.bug_class), []).append(escape)
     return [rows for rows in groups.values() if len(rows) >= 2 and min(r.rung for r in rows) not in CLASS_KILLING]
+
+
+def say(line: str) -> None:
+    sys.stdout.write(line + "\n")
 
 
 def report(path: str, as_json: bool) -> bool:
@@ -197,7 +216,7 @@ def report(path: str, as_json: bool) -> bool:
     climbable = [e for e in net.escapes if CLIMBABLE.search(e.cell)]
     groups = open_classes(net.escapes)
     if as_json:
-        print(json.dumps({
+        say(json.dumps({
             "file": path,
             "signals": len(net.signals),
             "escapes": len(net.escapes),
@@ -208,23 +227,23 @@ def report(path: str, as_json: bool) -> bool:
             "problems": [asdict(p) for p in net.problems],
         }, indent=2))
         return not net.problems
-    print(f"{path}: {len(net.signals)} signals, {len(net.escapes)} escapes")
+    say(f"{path}: {len(net.signals)} signals, {len(net.escapes)} escapes")
     if net.escapes:
-        print("  rungs: " + ", ".join(f"{k} {RUNG_NAMES[k]}: {rungs[k]}" for k in sorted(rungs)))
-        print(f"  class-killing guards (rungs 1-4): {killed} of {len(net.escapes)}")
+        say("  rungs: " + ", ".join(f"{k} {RUNG_NAMES[k]}: {rungs[k]}" for k in sorted(rungs)))
+        say(f"  class-killing guards (rungs 1-4): {killed} of {len(net.escapes)}")
     if climbable:
-        print(f"  deferred climbs (row says a higher rung is possible): {len(climbable)}")
+        say(f"  deferred climbs (row says a higher rung is possible): {len(climbable)}")
         for e in climbable:
-            print(f"    {path}:{e.line}: rung {e.rung}: {e.cell[:110]}")
+            say(f"    {path}:{e.line}: rung {e.rung}: {e.cell[:110]}")
     for group in groups:
-        print(f"  open class (recurs, no class-killing guard): '{group[0].bug_class[:70]}' "
+        say(f"  open class (recurs, no class-killing guard): '{group[0].bug_class[:70]}' "
               f"at lines {[e.line for e in group]}, best rung {min(e.rung for e in group)}")
     for problem in net.problems:
-        print(f"{path}:{problem.line}: {problem.message}")
+        say(f"{path}:{problem.line}: {problem.message}")
     return not net.problems
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check a NET.md: every signal wired to a trigger, every escape guard on a "
                                                  "named rung, with a reason when it is below rung 4.")
     parser.add_argument("paths", nargs="*", default=["NET.md"])
