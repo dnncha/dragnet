@@ -57,7 +57,7 @@ Rungs 1 to 4 kill a class. Rungs 5 to 8 catch instances. Where you can, stack th
 Writing a test is the habit, and a test always seems possible, so an agent in a hurry reaches rung 7 and logs it. Across real projects most guards landed at rungs 5 to 7 while the escapes themselves were mostly pattern-shaped and could have been banned. Three rules stop the drift:
 
 - **Try the top three rungs out loud first.** Before the test, write down the type, the deleted API and the rule that would kill the class, and build the first one that works. Usually one of them is an afternoon's work or less.
-- **The reason goes in the row.** Below rung 4 the Rung cell carries `above:` and a reason that names what makes each higher rung impossible. `scripts/netcheck.py` fails the row without one.
+- **The reason goes in the row.** Below rung 4 the Rung cell carries `above:` and a reason that names what makes each higher rung impossible. `scripts/netcheck.py` fails the row without one. When a higher rung is possible but not built yet, say so: `above: climbable: <the type or rule that would kill it>`. Netcheck lists every climbable row as backlog, so a deferral stays visible instead of reading as settled.
 - **Recurrence forces a climb.** Two rows in the same class with no guard at rungs 1 to 4 make an open class. Netcheck lists it, and closing it comes before new work on that surface.
 
 ### Promotions that usually work
