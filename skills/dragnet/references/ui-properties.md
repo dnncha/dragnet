@@ -59,7 +59,7 @@ A property that has never been seen to fail may check nothing: the extractor can
 
 ## Keep the harness honest
 
-- **Know the 0.8 sharp edges.** A violation exits 2. `bombadil trace --json` puts `action`, `state`, `snapshots` and `violations` under `metadata` on each line. `--coverage-symbols` refuses an existing file. With `--chrome-variant headless-shell`, a `CHROME` override is ignored unless the file is named `chrome-headless-shell`, so name any wrapper script that. Outside the `--allow-url` boundary Bombadil offers no actions at all, so a Back into a login or consent page that bounces back ends the run with `no actions available`: allow those bounce pages explicitly.
+- **Know the 0.8 sharp edges.** A violation exits 2. `bombadil trace --json` puts `action`, `state`, `snapshots` and `violations` under `metadata` on each line. `--coverage-symbols` refuses an existing file. `--output-path` names a file whose parent directory must already exist (0.7 created a directory itself), so create the evidence directory in the runner rather than trusting the caller; a gate that passes a fresh path otherwise fails every journey in a second. When a run fails with no violation, put Bombadil's last output lines in the failure message, because gate logs often keep only the tail. With `--chrome-variant headless-shell`, a `CHROME` override is ignored unless the file is named `chrome-headless-shell`, so name any wrapper script that. Outside the `--allow-url` boundary Bombadil offers no actions at all, so a Back into a login or consent page that bounces back ends the run with `no actions available`: allow those bounce pages explicitly.
 
 Driver faults are not product failures. Treat them separately so agents do not learn that red means nothing.
 
