@@ -47,6 +47,14 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Make every sweep name each offender by something grep can find: the href, id, test id or nearest labelled container. A list of sizes without locators costs a search per finding.
 - Make error messages in the product itself say what was wrong, where, and what was expected. Agents read them too.
 
+## Wired
+
+- Every signal has a trigger: the compiler, a hook, the inner-loop command, the gate, the release script, a scheduler, or a live monitor. Record it in NET.md's `Runs` column.
+- "Nightly" is a cadence, not a trigger. Name the scheduler (cron, launchd, a CI schedule, the team's build machines) and where a red run goes: an issue, an email, a chat message. A scheduled job nobody reads is unwired.
+- Run scheduled suites against the latest main in a clean checkout, on the machines heavy work belongs on, with a timeout.
+- Mutation testing earns a schedule: weekly on the riskiest surface at minimum, with the score recorded in NET.md so a drop is visible. Where the tool supports it, also mutate only the lines a change touched at the gate.
+- A suite that only runs by hand decays: its fixtures rot and its first run in months fails for reasons nobody remembers. Wire it or delete it.
+
 ## Agent-specific
 
 - Agents run the commands they can see. A signal that isn't one documented command does not exist for them.

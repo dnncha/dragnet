@@ -13,13 +13,14 @@ description: dragnet builds the feedback net (types, lint, assertions, tests, fu
 - **Fast:** seconds in the inner loop, minutes at the gate.
 - **Honest:** deterministic. A flaky signal is a lying signal, and agents believe it.
 - **Precise:** the failure names the file, line, input and expected-vs-actual, so the fix is one step away.
+- **Wired:** something runs it without anyone remembering to: the compiler, a hook, the inner-loop command, the gate, the release script or a scheduler. A signal that runs "by hand" or "nightly" with no scheduler behind it is a hole with documentation.
 
 The **net** is the whole set of signals. A **hole** is a risk no signal covers. An **escape** is a bug that got through the net. A **catch** is a defect a signal found, whether an old signal or one dragnet just added.
 
 Every catch and every escape goes through the same four moves, in order:
 
 1. **Fix it.** The defect, and every sibling with the same cause, is fixed in this session. A net that finds bugs and leaves them in place has only written a report.
-2. **Kill the class.** Ask what else breaks the same way, and climb the prevention ladder in [references/escapes.md](references/escapes.md) as high as it goes. The goal is a codebase where the class cannot be written: a type, a deleted API or a lint rule beats any test.
+2. **Kill the class.** Ask what else breaks the same way, and climb the prevention ladder in [references/escapes.md](references/escapes.md) as high as it goes. The goal is a codebase where the class cannot be written: a type, a deleted API or a lint rule beats any test. A test is the floor, not the default: a guard below rung 4 needs a written reason why each rung above is impossible here, and `scripts/netcheck.py` refuses the log row without one.
 3. **Catch it in seconds.** Whatever guard you add runs at the earliest tier that can see it, ideally the compiler or the inner loop, and fails with a message that points at the line. Measure time-to-red and push it down.
 4. **Prove and log it.** The guard goes red on the broken code and on a planted sibling, green on the fix, and the row lands in `NET.md`.
 
@@ -31,10 +32,10 @@ Use this when you invoked dragnet yourself in the middle of other work because s
 
 1. **Name it** in one line: what broke, how it was found, and which earlier tier could have seen it (use [references/catch-map.md](references/catch-map.md)).
 2. **Fix it and its siblings.** Search for the same cause (the old pattern, the same call, the same assumption) across the codebase and fix every instance in this change. Fix tests that assert the buggy behaviour.
-3. **Kill the class.** Climb the prevention ladder in [references/escapes.md](references/escapes.md) from the top: make it unrepresentable, delete the dangerous API, or ban it with a rule. Drop to an assertion or a test only when every rung above is impossible here, and write down why in the log row.
+3. **Kill the class.** Climb the prevention ladder in [references/escapes.md](references/escapes.md) from the top, before writing any test. Name the type that would make it unrepresentable, the API you would delete, and the lint or ast-grep rule that would ban it; build the first one that works. The promotion table in escapes.md lists the usual way up for common classes. Drop to an assertion or a test only when you can say in one line why each of rungs 1 to 4 is impossible here, and that line goes in the log row as `above: ...`. "A test was quicker" is not a reason.
 4. **Make it fast.** The guard must fire in the editor, the compiler or the inner-loop command, in seconds. If it can only run at the gate, also add a fast slice to the inner loop.
 5. **Prove it.** Restore the bug, or plant a fresh instance of the class in a new spot: the guard goes red with a message that names the file and line, then green on the fix.
-6. **Log it** in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing), including the rung reached and the time-to-red. If the log shows the same class three times, the class is still open: schedule a full run on it.
+6. **Log it** in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing), including the rung reached and the time-to-red, then run `scripts/netcheck.py NET.md`. It fails on a row with no rung, or below rung 4 with no `above:` reason, and lists every open class: a class logged twice with no guard at rungs 1 to 4. An open class is the next thing to fix, in this session if the guard is small.
 
 Done when the defect and its siblings are fixed, the class guard is proven on both the original bug and a planted sibling, and the row is logged.
 
@@ -76,17 +77,21 @@ Read [references/escapes.md](references/escapes.md) and run its escape analysis 
 
 Group escapes by class before you start. One type change or lint rule that kills a class beats five regression tests for its five past instances.
 
-Done when every live defect is fixed, every escape's class has a guard at the highest rung the project allows, and each guard demonstrably fails on the pre-fix code.
+Then re-climb the old log. Run `scripts/netcheck.py NET.md`: for each open class, and each row whose `above:` reason no longer holds (the project gained a lint engine, a schema library, a stricter compiler mode), build the higher guard now, prove it on a planted sibling, and update the row's rung. Old rows are not settled just because they were logged.
+
+Done when every live defect is fixed, every escape's class has a guard at the highest rung the project allows, each guard demonstrably fails on the pre-fix code, and netcheck reports no open class you could close this session.
 
 ### 5. Tighten the loop
 
 Place every signal in a tier. The inner loop runs in seconds after every change. The gate is one command that runs before every commit or merge. Slow work belongs in nightly or background runs. If any tier is too slow, flaky or vague to steer an agent, apply [references/loop.md](references/loop.md). These timings are targets for the design, not gate-failing budgets. Report times as numbers and never fail a build on a limit fitted to today's measurement.
 
-Done when the inner loop and the gate are each one documented command, and every flaky test is fixed or quarantined with a named reason.
+Then wire every signal. Each row in NET.md's signals table names its trigger in a `Runs` column: `compiler`, `hook`, `inner`, `gate`, `release`, `live`, or `scheduled: <scheduler>, <cadence>`. Slow suites (mutation testing, long fuzz and property runs, full browser matrices, model checking at depth, real-data benchmarks) go to a real scheduler: cron, launchd, a CI schedule, or the build machines the environment already uses, with a red run reaching a person or an issue tracker. Mutation testing on the riskiest surface is scheduled at least weekly, and a fast slice (mutants on the lines a change touched) runs at the gate where the tool supports it. A signal nobody wires moves to Holes; it does not stay in the signals table looking covered.
+
+Done when the inner loop and the gate are each one documented command, every flaky test is fixed or quarantined with a named reason, and every signal has a trigger.
 
 ### 6. Write NET.md
 
-Write or update `NET.md` at the repo root from [references/net-template.md](references/net-template.md). It holds the signals by tier, the risk surfaces with their coverage, the ranked holes and the escape log. Link it from `AGENTS.md` or `CLAUDE.md` in one line so every future agent session finds the inner-loop and gate commands. Rank holes by likelihood × impact ÷ cost, and prefer the signal that fires earliest.
+Write or update `NET.md` at the repo root from [references/net-template.md](references/net-template.md). It holds the signals by tier, the risk surfaces with their coverage, the ranked holes and the escape log. Link it from `AGENTS.md` or `CLAUDE.md` in one line so every future agent session finds the inner-loop and gate commands. Rank holes by likelihood × impact ÷ cost, and prefer the signal that fires earliest. Copy `scripts/netcheck.py` into the repo (for example `tools/netcheck.py`) and run it in the gate, so a NET.md row with no trigger or no rung fails the merge.
 
 ### 7. Close the top holes now
 
@@ -107,6 +112,7 @@ Done when each new signal has been seen to fail on an injected fault and pass on
 - [references/escapes.md](references/escapes.md): escape analysis.
 - [references/loop.md](references/loop.md): making signals faster, more honest and more precise.
 - [references/net-template.md](references/net-template.md): the NET.md layout.
+- `scripts/netcheck.py`: checks a NET.md. Every signal names its trigger, every escape names its rung with a reason when below 4, and recurring classes with no class-killing guard are listed.
 - [references/ui-properties.md](references/ui-properties.md): property-based UI exploration with Bombadil: gate and nightly tiers, swarm fuzzing, shrinking, coverage of the walk, properties worth writing, a fault suite that proves each property, and keeping driver errors out of the verdict.
 
 ## Starting nets
