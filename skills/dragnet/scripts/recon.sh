@@ -44,7 +44,7 @@ has '(^|/)bench(es|marks?)?/|_bench\.|\.bench\.' && line "benchmarks present"
 section "Signals detected"
 pkgs=$(printf '%s\n' "$all" | grep -E '(^|/)package\.json$' | grep -v node_modules | awk -F/ 'NF<=3')
 for pkg in $pkgs; do
-  for dep in typescript vitest jest mocha @playwright/test cypress fast-check @stryker-mutator/core eslint @biomejs/biome oxlint zod valibot @axe-core/playwright storybook c8 @vitest/coverage-v8 k6 @pact-foundation/pact jazzer.js; do
+  for dep in typescript vitest jest mocha @playwright/test cypress fast-check @stryker-mutator/core eslint @biomejs/biome oxlint zod valibot @axe-core/playwright storybook c8 @vitest/coverage-v8 k6 @pact-foundation/pact jazzer.js @antithesishq/bombadil; do
     grep -q "\"$dep\"" "$pkg" && line "$pkg: $dep"
   done
 done

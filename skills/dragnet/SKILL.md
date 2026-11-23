@@ -94,6 +94,8 @@ Implement the top one to three holes in this session. Prove each new signal work
 
 **Fix what the new signals catch.** A new type, rule, sweep or property often goes red on today's code. Each of those failures is a real defect the old net missed. Fix every one in this session, rather than suppressing it, baselining it or loosening the signal. If a finding is a false positive, tighten the signal until it is precise, never widen an allowlist to get green. Only a fix too large for the session may be deferred, and then it is listed in NET.md's holes with its locator, never hidden behind a skip. Run each caught defect through the four moves: its class may be wider than the hole you were closing.
 
+For a web or terminal UI, the top holes usually include rules no check enforces and multi-step flows nobody tests: write them as properties, prove each with a fault fixture, and run a fuzz campaign long enough to reach deep states, following [references/ui-properties.md](references/ui-properties.md). Fix every shrunk violation it finds.
+
 Run the gate, then commit with the escape or hole it closes and the defects it caught in the message.
 
 Done when each new signal has been seen to fail on an injected fault and pass on the real code, every defect it caught is fixed or listed, the gate is green, and NET.md lists what remains.
@@ -105,13 +107,14 @@ Done when each new signal has been seen to fail on an injected fault and pass on
 - [references/escapes.md](references/escapes.md): escape analysis.
 - [references/loop.md](references/loop.md): making signals faster, more honest and more precise.
 - [references/net-template.md](references/net-template.md): the NET.md layout.
+- [references/ui-properties.md](references/ui-properties.md): property-based UI exploration with Bombadil: gate and nightly tiers, swarm fuzzing, shrinking, coverage of the walk, properties worth writing, a fault suite that proves each property, and keeping driver errors out of the verdict.
 
 ## Starting nets
 
 For projects with no strategy yet. Adjust using step 2's risks.
 
 - **Any project:** strictest types, curated lint as errors, unit tests on pure logic, dependency and secret scanning, one gate command.
-- **Web app:** add schema validation at every boundary, integration tests against a real database, three to five Playwright paths, axe checks, visual snapshots of key pages, synthetic checks on signup and checkout.
+- **Web app:** add schema validation at every boundary, integration tests against a real database, three to five Playwright paths, axe checks, visual snapshots of key pages, synthetic checks on signup and checkout, and a property-based UI spec (Bombadil) that checks the product, design and accessibility rules on every reachable screen: a short run at the gate and a nightly swarm fuzz campaign whose violations are shrunk ([references/ui-properties.md](references/ui-properties.md)).
 - **iOS or macOS app:** add the Swift 6 language mode, Swift Testing for view models and stores, XCUITest for the main flows with accessibility audits, snapshot tests for key screens, TSan on the suite, crash reporting.
 - **Library or parser:** add property tests for round-trips and invariants, fuzz targets for every untrusted input, differential tests against a reference, mutation testing on the core.
 - **Service or API:** add contract tests per consumer, integration tests with Testcontainers, a load test before launches, fault injection on dependencies, tracing.

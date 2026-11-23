@@ -16,9 +16,10 @@ wrong result from correct-looking code
 8. **Differential tests** (gate, seconds): Refactors, rewrites, ports to a new language, fast paths against slow reference code.
 9. **Model-based and stateful tests** (gate, seconds): Caches, editors, sync engines, state machines, anything with history.
 10. **LLM evals** (gate, minutes): Any feature whose output comes from a model.
-11. **Model checking** (nightly, minutes): Protocols, distributed algorithms, locking schemes, sync logic.
-12. **Code review** (human, manual): Every change worth keeping.
-13. **Formal verification** (human, manual): Crypto, consensus, compilers, safety-critical kernels.
+11. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+12. **Model checking** (nightly, minutes): Protocols, distributed algorithms, locking schemes, sync logic.
+13. **Code review** (human, manual): Every change worth keeping.
+14. **Formal verification** (human, manual): Crypto, consensus, compilers, safety-critical kernels.
 
 ## edge
 
@@ -51,10 +52,11 @@ crashes, panics, hangs, memory corruption
 1. **Property-based tests** (inner, seconds): Parsers, serializers, encoders, math, data structures, anything with a round-trip.
 2. **Sanitizers** (gate, seconds): Any native, unsafe or concurrent code. Run the existing suite under them.
 3. **Smoke tests** (gate, seconds): After every build and every deploy.
-4. **Fuzzing** (nightly, hours): Untrusted input: file formats, network protocols, parsers, decoders.
-5. **Symbolic and concolic execution** (nightly, hours): Small, critical functions with complex branching.
-6. **Observability and error tracking** (production, continuous): Every shipped product.
-7. **Formal verification** (human, manual): Crypto, consensus, compilers, safety-critical kernels.
+4. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+5. **Fuzzing** (nightly, hours): Untrusted input: file formats, network protocols, parsers, decoders.
+6. **Symbolic and concolic execution** (nightly, hours): Small, critical functions with complex branching.
+7. **Observability and error tracking** (production, continuous): Every shipped product.
+8. **Formal verification** (human, manual): Crypto, consensus, compilers, safety-critical kernels.
 
 ## wiring
 
@@ -88,7 +90,8 @@ migrations, persistence, serialization, data loss
 3. **Property-based tests** (inner, seconds): Parsers, serializers, encoders, math, data structures, anything with a round-trip.
 4. **Integration tests** (gate, seconds): Anything that talks to storage or another process.
 5. **Model-based and stateful tests** (gate, seconds): Caches, editors, sync engines, state machines, anything with history.
-6. **Deterministic simulation** (nightly, minutes): Databases, sync engines, distributed systems, anything with retries and timeouts.
+6. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+7. **Deterministic simulation** (nightly, minutes): Databases, sync engines, distributed systems, anything with retries and timeouts.
 
 ## ui
 
@@ -96,25 +99,28 @@ broken flows, wrong UI state, dead buttons
 
 1. **Component tests** (inner, seconds): UI components with state, modules with several collaborators.
 2. **End-to-end tests** (gate, minutes): A handful of revenue-critical or signup-critical paths only.
-3. **Exploratory testing** (human, manual): After any user-visible change, before a release.
+3. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+4. **Exploratory testing** (human, manual): After any user-visible change, before a release.
 
 ## visual
 
 layout, styling and rendering breakage
 
 1. **Localization and pseudo-localization** (gate, minutes): Any app with, or planning, translations.
-2. **Visual regression tests** (gate, minutes): Design systems, marketing pages, any UI an agent edits often.
-3. **Exploratory testing** (human, manual): After any user-visible change, before a release.
+2. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+3. **Visual regression tests** (gate, minutes): Design systems, marketing pages, any UI an agent edits often.
+4. **Exploratory testing** (human, manual): After any user-visible change, before a release.
 
 ## perf
 
 slowness, memory growth, resource exhaustion
 
-1. **Benchmarks and performance regression tests** (nightly, minutes): Hot loops, startup time, rendering, audio, anything users feel.
-2. **Load, stress, spike and soak tests** (nightly, hours): Before launches, pricing changes or anything expecting a traffic jump.
-3. **Canary and progressive rollout** (production, continuous): Any service with enough traffic to compare.
-4. **Observability and error tracking** (production, continuous): Every shipped product.
-5. **Shadow traffic and replay** (production, continuous): Rewrites of request-handling services.
+1. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+2. **Benchmarks and performance regression tests** (nightly, minutes): Hot loops, startup time, rendering, audio, anything users feel.
+3. **Load, stress, spike and soak tests** (nightly, hours): Before launches, pricing changes or anything expecting a traffic jump.
+4. **Canary and progressive rollout** (production, continuous): Any service with enough traffic to compare.
+5. **Observability and error tracking** (production, continuous): Every shipped product.
+6. **Shadow traffic and replay** (production, continuous): Rewrites of request-handling services.
 
 ## concurrency
 
@@ -151,6 +157,7 @@ accessibility failures
 
 1. **Linting and static analysis** (edit, instant): Always. Turn each escaped bug class that a pattern can catch into a custom rule.
 2. **Accessibility checks** (gate, seconds): Every user interface.
+3. **Property-based UI exploration** (gate, minutes): Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
 
 ## platform
 

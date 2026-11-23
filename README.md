@@ -16,7 +16,7 @@ An agent improves only as fast as its signals tell it it's wrong. Strict types, 
 6. **NET.md.** A short file at the repo root that tells every future agent session how the net works.
 7. **Close holes now.** Each new signal is proven by injecting the bug it targets and watching it fail. Whatever it catches in today's code gets fixed in the same session, not baselined.
 
-It ships with a catalog of 49 techniques: tier, speed, setup cost, strengths, gaps, signal quality, what covers each gap, and tools for JS/TS, Python, Swift, Rust, Go and the JVM. It also has a catch map from 17 bug classes to the signals that catch them, earliest first.
+It ships with a catalog of 50 techniques: tier, speed, setup cost, strengths, gaps, signal quality, what covers each gap, and tools for JS/TS, Python, Swift, Rust, Go and the JVM. It also has a catch map from 17 bug classes to the signals that catch them, earliest first.
 
 ## Install
 
@@ -56,11 +56,12 @@ The full field guide is at [notchbird.com/testing](https://notchbird.com/testing
 ```text
 skills/dragnet/SKILL.md                 the procedure
 skills/dragnet/scripts/recon.sh         repo scan
-skills/dragnet/references/catalog.md    49 techniques (generated)
+skills/dragnet/references/catalog.md    50 techniques (generated)
 skills/dragnet/references/catch-map.md  bug class → signals (generated)
 skills/dragnet/references/escapes.md    escape analysis
 skills/dragnet/references/loop.md       faster, honest, precise signals
 skills/dragnet/references/net-template.md
+skills/dragnet/references/ui-properties.md  UI property exploration with Bombadil
 data/catalog.json                       source data
 tools/build.py                          regenerates the generated references
 ```

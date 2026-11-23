@@ -42,7 +42,7 @@ A tight loop is one an agent can run after every change and trust completely. Wo
 - Assert on behaviour through public interfaces, with expected-vs-actual output.
 - Name tests as sentences describing behaviour, so a failure reads as a bug report.
 - Make end-to-end and integration failures carry their evidence: a trace, a screenshot, the request and response, the relevant log lines.
-- Keep property and fuzz counterexamples shrunk and saved.
+- Keep property and fuzz counterexamples shrunk and saved. For UI exploration, shrink every violation trace before anyone reads it, and keep driver errors (browser timeouts, launch failures) out of the verdict: retry once and report no verdict, never red.
 - Print the seed for anything random.
 - Make every sweep name each offender by something grep can find: the href, id, test id or nearest labelled container. A list of sizes without locators costs a search per finding.
 - Make error messages in the product itself say what was wrong, where, and what was expected. Agents read them too.

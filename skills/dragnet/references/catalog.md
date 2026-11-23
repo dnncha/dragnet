@@ -35,6 +35,7 @@ Tiers: `edit` fires while the agent edits (editor, compiler, watch mode); `inner
 | [End-to-end tests](#e2e) | gate | minutes | high | ui, wiring, regression, requirements |
 | [LLM evals](#evals) | gate | minutes | medium | logic, regression, requirements |
 | [Localization and pseudo-localization](#i18n) | gate | minutes | low | platform, visual |
+| [Property-based UI exploration](#ui-property) | gate | minutes | medium | ui, visual, a11y, crash, logic, data, perf |
 | [Visual regression tests](#visual) | gate | minutes | medium | visual, regression |
 | [Benchmarks and performance regression tests](#benchmark) | nightly | minutes | medium | perf, regression |
 | [Chaos and fault injection](#chaos) | nightly | minutes | high | resilience |
@@ -213,7 +214,7 @@ Real user flows driven through the UI against the running stack.
 - **Gaps:** Slow, flaky, costly to maintain, and failures point at a screen rather than a cause.
 - **Signal quality:** Weak alone: pair with traces, screenshots and logs so the agent sees why.
 - **Use when:** A handful of revenue-critical or signup-critical paths only.
-- **Covers its gaps:** [Integration tests](#integration), [Component tests](#component)
+- **Covers its gaps:** [Integration tests](#integration), [Component tests](#component), [Property-based UI exploration](#ui-property)
 - **Tools:** JS/TS: Playwright · Swift: XCUITest · JVM: Espresso · Mobile: Maestro, Detox
 
 <a id="smoke"></a>
@@ -274,6 +275,20 @@ Random sequences of operations run against the system and a simple model, compar
 - **Covers its gaps:** [Deterministic simulation](#simulation), [Model checking](#model-checking)
 - **Tools:** JS/TS: fast-check commands · Python: Hypothesis RuleBasedStateMachine · Rust: proptest-state-machine · JVM: jqwik stateful
 
+<a id="ui-property"></a>
+### Property-based UI exploration
+
+A tool drives the real UI with generated clicks, typing, scrolling and navigation, and checks temporal properties (always, eventually within, next) on every state it reaches, including leak properties over DOM nodes, listeners and heap.
+
+- **Tier / speed / setup:** gate · minutes · medium
+- **Catches:** ui, visual, a11y, crash, logic, data, perf
+- **Strengths:** Turns every design, product and accessibility rule into a check on every reachable screen, finds the bug that needs a dozen steps in an unplanned order, and shrinks the failing trace with a screenshot of each state.
+- **Gaps:** Random exploration only reaches shallow states unless runs are long, seeded with realistic data and steered with weighted actions; replay is not deterministic outside a deterministic hypervisor; a property never seen to fail may be checking nothing.
+- **Signal quality:** Good when every violation is shrunk and carries its trace, screenshots and the property name; poor when browser driver errors are counted as failures.
+- **Use when:** Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.
+- **Covers its gaps:** [End-to-end tests](#e2e), [Visual regression tests](#visual), [Model-based and stateful tests](#model)
+- **Tools:** JS/TS: Bombadil (@antithesishq/bombadil), Quickstrom · Any: Bombadil browser and terminal drivers
+
 <a id="fuzz"></a>
 ### Fuzzing
 
@@ -285,7 +300,7 @@ Coverage-guided mutation of inputs, looking for crashes, hangs and sanitizer fai
 - **Gaps:** Mostly finds crashes rather than wrong answers, and needs CPU time and a harness.
 - **Signal quality:** Saves a crashing input that becomes a permanent regression test.
 - **Use when:** Untrusted input: file formats, network protocols, parsers, decoders.
-- **Covers its gaps:** [Property-based tests](#property), [Differential tests](#differential)
+- **Covers its gaps:** [Property-based tests](#property), [Differential tests](#differential), [Property-based UI exploration](#ui-property)
 - **Tools:** JS/TS: Jazzer.js · Python: Atheris · Swift: libFuzzer via -sanitize=fuzzer · Rust: cargo-fuzz · Go: go test -fuzz · JVM: Jazzer
 
 <a id="metamorphic"></a>
@@ -513,7 +528,7 @@ A person or an agent drives the real product freely, looking for anything wrong.
 - **Gaps:** Not repeatable unless findings become tests.
 - **Signal quality:** Rich but unstructured: turn each finding into an automated test.
 - **Use when:** After any user-visible change, before a release.
-- **Covers its gaps:** [End-to-end tests](#e2e), [Visual regression tests](#visual)
+- **Covers its gaps:** [End-to-end tests](#e2e), [Visual regression tests](#visual), [Property-based UI exploration](#ui-property)
 - **Tools:** Any: agent browser or simulator control, session recording
 
 <a id="usability"></a>

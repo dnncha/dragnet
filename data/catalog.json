@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-18",
+  "version": "2026-11-23",
   "speeds": {
     "instant": "under a second, on every keystroke or save",
     "seconds": "seconds, on every save or change",
@@ -222,7 +222,7 @@
       "tier": "gate",
       "signal": "Weak alone: pair with traces, screenshots and logs so the agent sees why.",
       "use_when": "A handful of revenue-critical or signup-critical paths only.",
-      "cover_gaps_with": ["integration", "component"],
+      "cover_gaps_with": ["integration", "component", "ui-property"],
       "tools": {"js": "Playwright", "swift": "XCUITest", "mobile": "Maestro, Detox", "jvm": "Espresso"}
     },
     {
@@ -290,6 +290,22 @@
       "tools": {"js": "fast-check commands", "python": "Hypothesis RuleBasedStateMachine", "rust": "proptest-state-machine", "jvm": "jqwik stateful"}
     },
     {
+      "id": "ui-property",
+      "name": "Property-based UI exploration",
+      "group": "generated",
+      "what": "A tool drives the real UI with generated clicks, typing, scrolling and navigation, and checks temporal properties (always, eventually within, next) on every state it reaches, including leak properties over DOM nodes, listeners and heap.",
+      "catches": ["ui", "visual", "a11y", "crash", "logic", "data", "perf"],
+      "strengths": "Turns every design, product and accessibility rule into a check on every reachable screen, finds the bug that needs a dozen steps in an unplanned order, and shrinks the failing trace with a screenshot of each state.",
+      "gaps": "Random exploration only reaches shallow states unless runs are long, seeded with realistic data and steered with weighted actions; replay is not deterministic outside a deterministic hypervisor; a property never seen to fail may be checking nothing.",
+      "speed": "minutes",
+      "setup": "medium",
+      "tier": "gate",
+      "signal": "Good when every violation is shrunk and carries its trace, screenshots and the property name; poor when browser driver errors are counted as failures.",
+      "use_when": "Any web or terminal UI an agent edits often: forms, checkout, dashboards, multi-step flows. A short run at the gate, long swarm fuzz campaigns nightly.",
+      "cover_gaps_with": ["e2e", "visual", "model"],
+      "tools": {"js": "Bombadil (@antithesishq/bombadil), Quickstrom", "any": "Bombadil browser and terminal drivers"}
+    },
+    {
       "id": "fuzz",
       "name": "Fuzzing",
       "group": "generated",
@@ -302,7 +318,7 @@
       "tier": "nightly",
       "signal": "Saves a crashing input that becomes a permanent regression test.",
       "use_when": "Untrusted input: file formats, network protocols, parsers, decoders.",
-      "cover_gaps_with": ["property", "differential"],
+      "cover_gaps_with": ["property", "differential", "ui-property"],
       "tools": {"js": "Jazzer.js", "python": "Atheris", "swift": "libFuzzer via -sanitize=fuzzer", "rust": "cargo-fuzz", "go": "go test -fuzz", "jvm": "Jazzer"}
     },
     {
@@ -558,7 +574,7 @@
       "tier": "human",
       "signal": "Rich but unstructured: turn each finding into an automated test.",
       "use_when": "After any user-visible change, before a release.",
-      "cover_gaps_with": ["e2e", "visual"],
+      "cover_gaps_with": ["e2e", "visual", "ui-property"],
       "tools": {"any": "agent browser or simulator control, session recording"}
     },
     {
