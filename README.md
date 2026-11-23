@@ -56,6 +56,7 @@ The full field guide is at [notchbird.com/testing](https://notchbird.com/testing
 ```text
 skills/dragnet/SKILL.md                 the procedure
 skills/dragnet/scripts/recon.sh         repo scan
+skills/dragnet/scripts/bombadil-campaign.mjs  Bombadil fuzz, shrink and coverage runner
 skills/dragnet/references/catalog.md    50 techniques (generated)
 skills/dragnet/references/catch-map.md  bug class → signals (generated)
 skills/dragnet/references/escapes.md    escape analysis

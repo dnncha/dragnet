@@ -17,6 +17,12 @@ A 10 to 30 second `test` from one page is a smoke check: it reaches shallow stat
 - `--chrome-variant headless-shell` renders frame by frame and gives up to four times the throughput of full Chrome. Use it for fuzz campaigns; keep full Chrome for a run whose screenshots someone will read.
 - Run campaigns on build machines, not the developer laptop, following the environment's compute routing. Give the campaign a fixed time budget and report the number of runs and states explored as numbers, never as a gate-failing limit.
 
+### Ready-made campaign runner
+
+Copy [../scripts/bombadil-campaign.mjs](../scripts/bombadil-campaign.mjs) into the project's scripts. `runCampaign({ binary, origin, specification, directory, fuzzTime, runTime, parallelism, chromeVariant, env, flags })` runs `fuzz --swarm` with coverage symbols, deletes passing traces, shrinks the first trace for each violated property with `--property`, writes screenshots, and leaves `summary.json` and `report.md` (shrunk steps, snapshots, reproduce command with cookies redacted, least-reached app scripts). It also exports `traceStates`, `violationsInStates` and `driverFailure` for the gate runner. Wire it to the same journey list, seeds and stubs the gate uses, behind one command such as `npm run fuzz:bombadil`. Bronora, Tankful and Olladay use it.
+
+When the gate drives a browser the harness owns (`test-external` behind a routed Playwright context), `fuzz` and `shrink` cannot be used without leaving that fence, because both launch their own browser. There, a campaign is the same fenced journey run several times for minutes each, with a fresh browser profile per run (state such as a dismissed cookie banner otherwise carries over and breaks the next run), keeping only failing traces with screenshots.
+
 ## Every violation is shrunk before anyone reads it
 
 1. A run or campaign exits non-zero and writes a trace per run.
@@ -53,9 +59,11 @@ A property that has never been seen to fail may check nothing: the extractor can
 
 ## Keep the harness honest
 
+- **Know the 0.8 sharp edges.** A violation exits 2. `bombadil trace --json` puts `action`, `state`, `snapshots` and `violations` under `metadata` on each line. `--coverage-symbols` refuses an existing file. With `--chrome-variant headless-shell`, a `CHROME` override is ignored unless the file is named `chrome-headless-shell`, so name any wrapper script that. Outside the `--allow-url` boundary Bombadil offers no actions at all, so a Back into a login or consent page that bounces back ends the run with `no actions available`: allow those bounce pages explicitly.
+
 Driver faults are not product failures. Treat them separately so agents do not learn that red means nothing.
 
-- **Always export a fallback action.** If every generator is gated with `.when`, some states have no action and the run dies with `no actions available`. Export `actions(() => ["Wait"])` with a low weight, or a back or reload action, so every state has a move.
+- **Always export a fallback action.** If every generator is gated with `.when` or can return an empty list, some states have no action and the run dies with `no actions available`; a page with nothing to click or scroll does the same, and `waitOnce` does not help after its one use. Export `actions(() => ["Wait"])` from a shared module every spec re-exports, or return `"Wait"` instead of `[]` from a scenario generator while the page settles. Generators are weighted equally, so wrap with `weighted` when waiting would crowd out real moves.
 - **Classify exits.** A property violation is a product failure. A driver error (CDP timeouts such as `Page.captureScreenshot` or `CSS.enable`, `failed to launch`, `connection closed`) is an infrastructure loss: retry that surface once and report it as no verdict if it fails again.
 - **Pin the boundary.** Start from a local server with a seeded throwaway database and fake payment, email and storage endpoints. Use `--allow-url` to keep the walk on the surface under test. When the page needs network fencing, run `bombadil browser test-external --remote-debugger <url>` against a browser the harness controls (for example a Playwright context that routes or blocks every request) and assert afterwards that the walk stayed in that context.
 - **Stable browser flags.** `--disable-dev-shm-usage`, `--disable-gpu`, `--force-prefers-reduced-motion` and a host resolver rule that maps everything but the local server to nothing remove most environment noise. `--chrome-virtual-time-policy` speeds up timer-heavy apps.
