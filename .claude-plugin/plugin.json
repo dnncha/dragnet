@@ -1,10 +1,28 @@
 {
   "name": "dragnet",
-  "version": "0.1.0",
-  "description": "Design a project's feedback net so coding agents catch their own mistakes fast: pick testing techniques, shift escaped bugs left, tighten the loop.",
-  "author": {"name": "Notchbird", "url": "https://notchbird.com"},
+  "version": "0.2.0",
+  "description": "Build a project's feedback net so coding agents catch their own mistakes fast: fix every bug the net catches, turn each into a class-level guard (types, lint rules, sweeps, property tests, fuzzing, mutation testing), tighten the test loop.",
+  "author": {
+    "name": "Notchbird",
+    "url": "https://notchbird.com"
+  },
   "homepage": "https://notchbird.com/testing/",
   "repository": "https://github.com/dnncha/dragnet",
   "license": "MIT",
-  "keywords": ["testing", "feedback", "agents", "skill", "fuzzing", "property-based-testing", "mutation-testing"]
+  "keywords": [
+    "testing",
+    "testing-strategy",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "feedback",
+    "regression",
+    "bug-prevention",
+    "lint",
+    "fuzzing",
+    "property-based-testing",
+    "mutation-testing",
+    "flaky-tests",
+    "ci"
+  ]
 }

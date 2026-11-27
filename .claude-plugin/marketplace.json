@@ -1,11 +1,23 @@
 {
   "name": "dragnet",
-  "owner": {"name": "Notchbird", "url": "https://notchbird.com"},
+  "owner": {
+    "name": "Notchbird",
+    "url": "https://notchbird.com"
+  },
   "plugins": [
     {
       "name": "dragnet",
       "source": "./",
-      "description": "Design a project's feedback net so coding agents catch their own mistakes fast."
+      "description": "Build a project's feedback net so coding agents catch their own mistakes fast, and turn every escaped bug into a guard that kills its whole class.",
+      "version": "0.2.0",
+      "category": "testing",
+      "keywords": [
+        "testing",
+        "regression",
+        "fuzzing",
+        "mutation-testing",
+        "property-based-testing"
+      ]
     }
   ]
 }

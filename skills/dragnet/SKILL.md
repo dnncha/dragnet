@@ -1,6 +1,7 @@
 ---
 name: dragnet
-description: dragnet builds the feedback net (types, lint, assertions, tests, fuzzing, sanitizers, production signals) that lets coding agents catch their own mistakes early. It fixes every defect the net catches, then turns each one into a class-level guard that makes the same kind of bug impossible or catches it within seconds of the edit. Invoke it yourself, mid-task, the moment a bug surfaces later than it should have - a user, reviewer or late gate found what an earlier check could have, the same kind of fix recurs, or debugging took far longer than the fix. Also use when choosing a testing strategy, when the test loop is slow or flaky, or when asked what the tests cover.
+description: "dragnet builds the feedback net that lets coding agents catch their own mistakes early: strict types, lint rules, assertions, tests, property-based testing, fuzzing, mutation testing, sanitizers and production signals. It fixes every bug the net catches, then turns each one into a class-level guard that makes the same kind of bug impossible or catches it within seconds of the edit. Bare `/dragnet` runs deep mode: a whole-project dive that hunts and fixes defects everywhere, closes the holes in test coverage, speeds up the loop and ships the result. Invoke it yourself mid-task the moment a bug surfaces later than it should have - a user, reviewer or late CI gate found what an earlier check could have, the same kind of fix recurs, or debugging took far longer than the fix. Also use for a testing strategy, regression prevention, a slow or flaky test suite, or when asked what the tests actually cover."
+license: MIT
 ---
 
 # dragnet
@@ -26,6 +27,28 @@ Every catch and every escape goes through the same four moves, in order:
 
 A type beats a test, a test beats a review, a review beats a user report.
 
+## Pick the mode first
+
+- **Deep mode:** the user fired `/dragnet` (or "run dragnet") with no arguments and nothing in the conversation names an escape, a file or a question. Go straight to deep mode below. Do not ask what they want, do not pick quick mode, and do not stop at a report.
+- **Quick mode:** you invoked dragnet yourself mid-task because something surfaced late, or the arguments name one bug.
+- **Branches:** the arguments or conversation name a narrower job (a slow loop, a coverage question). Use the branch table.
+
+## Deep mode: dive the whole project and improve everything
+
+The target is the project at the current working directory (its git root). If the working directory is a scratch folder with no project, use the repo the conversation is about; if there is none, say so in one line and stop. Load the `compute-routing` skill before any build, gate or fan-out, and follow the repo's own AGENTS.md or CLAUDE.md for gates, release rules and compute routing.
+
+"Everything" means everything dragnet owns: every defect in the code, every hole in the net, every slow, flaky or vague signal, every unwired check, and every written rule nothing enforces. Feature work and redesigns are out of scope; a bug in a feature is in.
+
+1. **Recon the whole history.** Run steps 1 to 3 in full, with `scripts/recon.sh <repo> <days since first commit>` so every escape-like commit is in view, not only the last 90 days. Run every existing signal at its strictest setting and record what is red.
+2. **Hunt defects on every surface.** For each risk surface from step 2, read the code itself, not only its tests, looking for the bug classes in [references/catch-map.md](references/catch-map.md). Turn on every cheap strictness the stack offers (strictest compiler mode, warnings as errors, sanitizers, exhaustive lint) and run mutation testing, fuzzing and property tests on the riskiest surfaces. Fan the read-only audits out to subagents, one per surface or two, within the Mac admission limits; give each the surface's paths and the catch-map classes, and have each return defects with file, line, failing input and expected-vs-actual. Verify every reported defect yourself before fixing it.
+3. **Fix every defect and kill every class.** Run each confirmed defect through the four moves. Group by class first, so one type or lint rule replaces many fixes. Then run step 4 over every escape in the whole history and re-climb every row in NET.md.
+4. **Tighten and wire the loop.** Run step 5 on every tier, not only the slowest.
+5. **Close every hole you can.** Run step 7 on every hole ranked in NET.md, not only the top three, in rank order. Defer a hole only when it is too large for the session, and list it in NET.md with its locator and the next step.
+6. **Repeat until dry.** After each round, rerun the gate and the new signals. Anything new they catch starts another round. Stop when a round finds no new defect, or when everything left is a deferred hole.
+7. **Ship.** Commit in reviewable pieces (one class or hole per commit, naming the defects it fixed), run the repo's gate, and push, merge or release following the repo's rules and the owner's standing instructions.
+
+Done when every confirmed defect is fixed, every escape class has its highest guard proven red on a planted sibling, every signal has a trigger, the gate is green, NET.md is current with only deferred holes left, and the work has shipped. Report in a few lines: defects fixed (count and the worst three), classes killed, holes closed, inner-loop and gate times before and after, and the deferred holes.
+
 ## Quick mode: an escape mid-task
 
 Use this when you invoked dragnet yourself in the middle of other work because something surfaced late. It takes minutes. Then return to the task.
@@ -35,7 +58,7 @@ Use this when you invoked dragnet yourself in the middle of other work because s
 3. **Kill the class.** Climb the prevention ladder in [references/escapes.md](references/escapes.md) from the top, before writing any test. Name the type that would make it unrepresentable, the API you would delete, and the lint or ast-grep rule that would ban it; build the first one that works. The promotion table in escapes.md lists the usual way up for common classes. Drop to an assertion or a test only when you can say in one line why each of rungs 1 to 4 is impossible here, and that line goes in the log row as `above: ...`. "A test was quicker" is not a reason.
 4. **Make it fast.** The guard must fire in the editor, the compiler or the inner-loop command, in seconds. If it can only run at the gate, also add a fast slice to the inner loop.
 5. **Prove it.** Restore the bug, or plant a fresh instance of the class in a new spot: the guard goes red with a message that names the file and line, then green on the fix.
-6. **Log it** in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing), including the rung reached and the time-to-red, then run `scripts/netcheck.py NET.md`. It fails on a row with no rung, or below rung 4 with no `above:` reason, and lists every open class: a class logged twice with no guard at rungs 1 to 4. An open class is the next thing to fix, in this session if the guard is small.
+6. **Log it** in `NET.md` (create it from [references/net-template.md](references/net-template.md) if missing), including the rung reached and the time-to-red, then run `scripts/netcheck.py NET.md`. It fails on a row with no rung, a rung with no guard behind it (`7 none yet`), or below rung 4 with no `above:` reason, lists guards never proved red, and lists every open class: a class logged twice with no guard at rungs 1 to 4. An open class is the next thing to fix, in this session if the guard is small.
 
 Done when the defect and its siblings are fixed, the class guard is proven on both the original bug and a planted sibling, and the row is logged.
 
@@ -45,6 +68,7 @@ Do every step for a new or unfamiliar project. Otherwise start at the step for y
 
 | Situation | Start at |
 |---|---|
+| Fired bare, no context | Deep mode |
 | Mid-task escape you noticed yourself | Quick mode |
 | New project, or no strategy yet | 1 |
 | A bug escaped or tests missed a regression | 4 |
@@ -91,7 +115,7 @@ Done when the inner loop and the gate are each one documented command, every fla
 
 ### 6. Write NET.md
 
-Write or update `NET.md` at the repo root from [references/net-template.md](references/net-template.md). It holds the signals by tier, the risk surfaces with their coverage, the ranked holes and the escape log. Link it from `AGENTS.md` or `CLAUDE.md` in one line so every future agent session finds the inner-loop and gate commands. Rank holes by likelihood × impact ÷ cost, and prefer the signal that fires earliest. Copy `scripts/netcheck.py` into the repo (for example `tools/netcheck.py`) and run it in the gate, so a NET.md row with no trigger or no rung fails the merge.
+Write or update `NET.md` at the repo root from [references/net-template.md](references/net-template.md). It holds the signals by tier, the risk surfaces with their coverage, the ranked holes and the escape log. Link it from `AGENTS.md` or `CLAUDE.md` in one line so every future agent session finds the inner-loop and gate commands. If a NET.md already exists in an older layout (no `Runs` column on signals, or no `Rung` and `Proved` columns on the escape log), netcheck reports it as 0 signals and 0 escapes: migrate it in place, filling each new cell from the evidence rather than guessing, before adding rows. Rank holes by likelihood × impact ÷ cost, and prefer the signal that fires earliest. Copy `scripts/netcheck.py` into the repo (for example `tools/netcheck.py`) and run it in the gate, so a NET.md row with no trigger or no rung fails the merge.
 
 ### 7. Close the top holes now
 
@@ -112,7 +136,7 @@ Done when each new signal has been seen to fail on an injected fault and pass on
 - [references/escapes.md](references/escapes.md): escape analysis.
 - [references/loop.md](references/loop.md): making signals faster, more honest and more precise.
 - [references/net-template.md](references/net-template.md): the NET.md layout.
-- `scripts/netcheck.py`: checks a NET.md. Every signal names its trigger, every escape names its rung with a reason when below 4, and recurring classes with no class-killing guard are listed.
+- `scripts/netcheck.py`: checks a NET.md. Every signal names its trigger, every escape names a real guard and its rung with a reason when below 4. It lists deferred climbs, unproved guards and recurring classes with no class-killing guard, and says how to migrate an older layout.
 - [references/ui-properties.md](references/ui-properties.md): property-based UI exploration with Bombadil: gate and nightly tiers, swarm fuzzing, shrinking, coverage of the walk, properties worth writing, a fault suite that proves each property, and keeping driver errors out of the verdict.
 
 ## Starting nets

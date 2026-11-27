@@ -37,6 +37,8 @@ SCHEDULED_RUNS = re.compile(r"scheduled\b.{3,}", re.IGNORECASE)
 REASON = re.compile(r"above:\s*\S.{10,}", re.IGNORECASE)
 CLIMBABLE = re.compile(r"climbable:", re.IGNORECASE)
 RUNG_NUMBER = re.compile(r"\s*([1-8])\b")
+NO_GUARD = re.compile(r"^\s*[1-8]\b[\s.:-]*(none|nothing|no guard|not yet|tbd|todo|pending|-|—)\b", re.IGNORECASE)
+NOT_PROVED = re.compile(r"^\s*(|no|n|none|not yet|pending|tbd|todo|n/a|-|—|–)\s*$|^\s*(no|not)\b", re.IGNORECASE)
 
 Row = tuple[int, list[str]]
 
@@ -61,6 +63,7 @@ class Escape:
     rung: int
     bug_class: str
     cell: str
+    proved: str
 
 
 def no_signals() -> list[Signal]:
@@ -141,7 +144,8 @@ def read_signals(net: Net, heading: str, rows: list[Row]) -> None:
     runs_i = column(header, "runs")
     name_i = column(header, "signal", "command")
     if runs_i is None:
-        net.problems.append(Problem(rows[0][0], f"signals table under '{heading}' has no 'Runs' column naming what triggers each signal"))
+        net.problems.append(Problem(rows[0][0], f"signals table under '{heading}' has no 'Runs' column naming what triggers each signal. "
+                                                 "This NET.md predates it: add the column from net-template.md and fill one trigger per row"))
         return
     for number, row in rows[1:]:
         if is_separator(row):
@@ -157,8 +161,10 @@ def read_escapes(net: Net, heading: str, rows: list[Row]) -> None:
     header = [h.lower() for h in rows[0][1]]
     rung_i = column(header, "rung")
     class_i = column(header, "class", "bug class")
+    proved_i = column(header, "proved")
     if rung_i is None:
-        net.problems.append(Problem(rows[0][0], f"escape log under '{heading}' has no 'Rung' column"))
+        net.problems.append(Problem(rows[0][0], f"escape log under '{heading}' has no 'Rung' column. "
+                                                 "This NET.md predates it: add Rung and Proved from net-template.md and fill each row"))
         return
     for number, row in rows[1:]:
         if is_separator(row):
@@ -169,7 +175,11 @@ def read_escapes(net: Net, heading: str, rows: list[Row]) -> None:
             net.problems.append(Problem(number, f"escape row has no rung number 1-8 (got '{text[:40]}')"))
             continue
         rung = int(found.group(1))
-        net.escapes.append(Escape(number, rung, cell(row, class_i), text))
+        net.escapes.append(Escape(number, rung, cell(row, class_i), text, cell(row, proved_i) if proved_i is not None else "yes"))
+        if NO_GUARD.match(text):
+            net.problems.append(Problem(number, f"escape row claims rung {rung} but names no guard ('{text[:40]}'). "
+                                                "Build the guard, or log the escape under Holes until it has one"))
+            continue
         if rung not in CLASS_KILLING and not REASON.search(text):
             net.problems.append(Problem(number, f"escape guarded at rung {rung} ({RUNG_NAMES[rung]}) "
                                                 "without 'above: <why rungs 1-4 are impossible here>'"))
@@ -214,6 +224,7 @@ def report(path: str, as_json: bool) -> bool:
     rungs = Counter(e.rung for e in net.escapes)
     killed = sum(rungs[r] for r in CLASS_KILLING)
     climbable = [e for e in net.escapes if CLIMBABLE.search(e.cell)]
+    unproved = [e for e in net.escapes if NOT_PROVED.match(e.proved)]
     groups = open_classes(net.escapes)
     if as_json:
         say(json.dumps({
@@ -223,6 +234,7 @@ def report(path: str, as_json: bool) -> bool:
             "rungs": {str(k): rungs[k] for k in sorted(rungs)},
             "class_killing": killed,
             "climbable": [asdict(e) for e in climbable],
+            "unproved": [asdict(e) for e in unproved],
             "open_classes": [[asdict(e) for e in g] for g in groups],
             "problems": [asdict(p) for p in net.problems],
         }, indent=2))
@@ -235,6 +247,10 @@ def report(path: str, as_json: bool) -> bool:
         say(f"  deferred climbs (row says a higher rung is possible): {len(climbable)}")
         for e in climbable:
             say(f"    {path}:{e.line}: rung {e.rung}: {e.cell[:110]}")
+    if unproved:
+        say(f"  unproved guards (never seen red on the pre-fix code and a planted sibling): {len(unproved)}")
+        for e in unproved:
+            say(f"    {path}:{e.line}: rung {e.rung}: Proved '{e.proved[:40]}'")
     for group in groups:
         say(f"  open class (recurs, no class-killing guard): '{group[0].bug_class[:70]}' "
               f"at lines {[e.line for e in group]}, best rung {min(e.rung for e in group)}")
