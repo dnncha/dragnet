@@ -90,6 +90,14 @@ async function coverageReport(blocksPath, states) {
   return { blocks: blocks.size, hit: [...blocks.keys()].filter((id) => hit.has(id)).length, rows };
 }
 
+const localHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+export function assertAllowedOrigin(origin, allowedHosts = []) {
+  const { hostname } = new URL(origin);
+  if (localHosts.has(hostname) || hostname.endsWith(".localhost") || allowedHosts.includes(hostname)) return;
+  throw new Error(`bombadil campaign refuses origin ${origin}: fuzz a local or staging build you own, and name its host in allowedHosts`);
+}
+
 export async function runCampaign({
   binary,
   origin,
@@ -102,10 +110,13 @@ export async function runCampaign({
   env = process.env,
   flags = [],
   keepPassingTraces = false,
+  allowedHosts = [],
+  disposableContainer = false,
   log = console.log
 }) {
+  assertAllowedOrigin(origin, allowedHosts);
   await mkdir(directory, { recursive: true });
-  const shared = ["--headless", "--no-sandbox", "--chrome-variant", chromeVariant, ...flags];
+  const shared = ["--headless", ...(disposableContainer ? ["--no-sandbox"] : []), "--chrome-variant", chromeVariant, ...flags];
   const started = Date.now();
   const fuzz = await collect(
     binary,
